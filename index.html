@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10180750</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10180755</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -278,15 +278,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0b0b12;
+            background-color: #0b0b12; /* 預設底色 */
+            transition: background-color 0.4s ease; /* 計算出四角顏色後平滑淡入 */
+            position: relative;
+            overflow: hidden;
         }
+        
         .carousel-slide img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             user-select: none;
             -webkit-user-drag: none;
-            background-color: #0b0b12;
         }
         /* 首張卡片：海報式圖文融合 (Poster Hero Card) */
         .hero-card {
@@ -1078,130 +1081,110 @@
             // ⚡ 背景非同步探測底圖與後續圖片（完全不阻塞上面的文字呈現）
             loadImagesInBackground(item, title, thisLoadId);
         }
-        // 計算圖片周圍邊緣像素的平均色彩 (HEX)
-        function getEdgeAverageColor(imgElement) {
+        // 計算圖片周圍邊緣像素的平均色彩 (HEX)// ⚡ 四角極速取色演算法：只讀取 4 個角，運算僅需 1~2 毫秒，零卡頓！
+        function applyCornerAverageColor(imgElement, targetSlide) {
             try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                const w = 40; // 採樣縮圖寬
-                const h = 40; // 採樣縮圖高
+                const w = 20;
+                const h = 20;
                 canvas.width = w;
                 canvas.height = h;
         
                 ctx.drawImage(imgElement, 0, 0, w, h);
-                const data = ctx.getImageData(0, 0, w, h).data;
         
-                let r = 0, g = 0, b = 0, count = 0;
+                // 取 4 個最外側頂角的像素: 左上 (0,0), 右上 (19,0), 左下 (0,19), 右下 (19,19)
+                const corners = [
+                    ctx.getImageData(0, 0, 1, 1).data,
+                    ctx.getImageData(w - 1, 0, 1, 1).data,
+                    ctx.getImageData(0, h - 1, 1, 1).data,
+                    ctx.getImageData(w - 1, h - 1, 1, 1).data
+                ];
         
-                // 僅取最外圈一圈邊緣的像素
-                for (let x = 0; x < w; x++) {
-                    for (let y = 0; y < h; y++) {
-                        if (x === 0 || x === w - 1 || y === 0 || y === h - 1) {
-                            const idx = (y * w + x) * 4;
-                            r += data[idx];
-                            g += data[idx + 1];
-                            b += data[idx + 2];
-                            count++;
-                        }
-                    }
-                }
-                r = Math.round(r / count);
-                g = Math.round(g / count);
-                b = Math.round(b / count);
+                let r = 0, g = 0, b = 0;
+                corners.forEach(c => {
+                    r += c[0];
+                    g += c[1];
+                    b += c[2];
+                });
         
-                return `rgb(${r}, ${g}, ${b})`;
+                r = Math.round(r / 4);
+                g = Math.round(g / 4);
+                b = Math.round(b / 4);
+        
+                // 平滑套用底色
+                targetSlide.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
             } catch (e) {
-                // 若遇到 CORS 等問題時降級為預設黑底
-                return '#0b0b12';
+                // 若遇到安全性限制則保留乾淨深黑
+                targetSlide.style.backgroundColor = '#0b0b12';
             }
         }
-        // 在背景探測圖片，抓到了才注入
+        
+        // 輔助函式：建立吃四角底色的 Slide（統一建立，避免變數寫錯）
+        function createColorAdaptiveSlide(imgUrl, title) {
+            const slide = document.createElement('div');
+            slide.className = 'carousel-slide';
+        
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.alt = title;
+            img.loading = 'lazy';
+            img.decoding = 'async';
+        
+            // 圖片載入完成後立即計算四角色彩並填入底色
+            img.onload = () => {
+                applyCornerAverageColor(img, slide);
+            };
+        
+            slide.appendChild(img);
+            return slide;
+        }
+        
+        // ⚡ 徹底修復變數名稱的後台背景載入函式
         async function loadImagesInBackground(item, title, loadId) {
-            // 1. 背景探測 01 號圖
+            const track = document.getElementById('carousel-track');
+        
+            // 1. 背景探測第 1 張圖
             const firstImg = await findImageWithExt(`${item.imgPrefix}01`);
             if (loadId !== currentLoadId) return;
         
             if (firstImg) {
-                // 找到了 01 號圖：注入實體底圖並加上 loaded 淡入
+                // 找到了 01 號圖：注入第一張 Slide 的實體底圖
                 const heroImg = document.getElementById('current-hero-img');
                 if (heroImg) {
                     heroImg.src = firstImg;
                     heroImg.classList.add('loaded');
+                    
+                    // 首頁海報也可以套用四角底色
+                    heroImg.onload = () => {
+                        const heroContainer = document.querySelector('.hero-slide-container');
+                        if (heroContainer) applyCornerAverageColor(heroImg, heroContainer);
+                    };
                 }
         
-                // 同時將純圖版 01 加入第二張 Slide
-                const track = document.getElementById('carousel-track');
-                const slide = document.createElement('div');
-                slide.className = 'carousel-slide';
-                
-                const img = document.createElement('img');
-                img.src = url;
-                img.alt = title;
-                img.loading = 'lazy';
-                img.decoding = 'async';
-                img.onload = () => {
-                    // 圖片載入完成後，自動將該 Slide 的背景設為邊緣平均色
-                    const edgeColor = getEdgeAverageColor(img);
-                    slide.style.backgroundColor = edgeColor;
-                };
-                
-                
-                slide.className = 'carousel-slide';
-                slide.innerHTML = `<img src="${firstImg}" alt="${title}" loading="lazy" decoding="async">`;
-                slide.appendChild(img);
-                track.appendChild(slide);
+                // ✅ 修正點：這裡明確使用 firstImg 建立第 2 張純圖 Slide，絕不再噴 url is not defined
+                const slide01 = createColorAdaptiveSlide(firstImg, title);
+                track.appendChild(slide01);
                 updateCarouselIndicator();
             }
         
-            // 2. 依序探測 02 ~ 15 (保持不變)
-            const track = document.getElementById('carousel-track');
+            // 2. 依序探測後續 02 ~ 15 號圖
             for (let i = 2; i <= 15; i++) {
-                if (loadId !== currentLoadId) return;
+                if (loadId !== currentLoadId) return; // 切換商品立刻中斷
+        
                 const num = String(i).padStart(2, '0');
                 const url = await findImageWithExt(`${item.imgPrefix}${num}`);
                 
                 if (url) {
                     if (loadId !== currentLoadId) return;
-                    const slide = document.createElement('div');
-                    slide.className = 'carousel-slide';
-                    slide.innerHTML = `<img src="${url}" alt="${title}" loading="lazy" decoding="async">`;
+                    
+                    // ✅ 這裡使用 url 建立第 3、4、5...張 Slide
+                    const slide = createColorAdaptiveSlide(url, title);
                     track.appendChild(slide);
                     updateCarouselIndicator();
                 } else {
+                    // 序號斷號即停
                     break;
-                }
-            }
-        }
-        
-        async function appendRemainingImages(prefix, title, firstImg, loadId) {
-            const track = document.getElementById('carousel-track');
-        
-            // 放入純圖版 01.jpg
-            if (firstImg) {
-                if (loadId !== currentLoadId) return; // 已切換到其他商品則終止
-                const slide = document.createElement('div');
-                slide.className = 'carousel-slide';
-                slide.innerHTML = `<img src="${firstImg}" alt="${title}" loading="lazy" decoding="async">`;
-                track.appendChild(slide);
-                updateCarouselIndicator();
-            }
-        
-            // 依序探測 02 ~ 15
-            for (let i = 2; i <= 15; i++) {
-                if (loadId !== currentLoadId) return; // 隨時檢查，切換商品立刻斷開
-        
-                const num = String(i).padStart(2, '0');
-                const url = await findImageWithExt(`${prefix}${num}`);
-                
-                if (url) {
-                    if (loadId !== currentLoadId) return;
-                    const slide = document.createElement('div');
-                    slide.className = 'carousel-slide';
-                    slide.innerHTML = `<img src="${url}" alt="${title}" loading="lazy" decoding="async">`;
-                    track.appendChild(slide);
-                    updateCarouselIndicator();
-                } else {
-                    break; // 序號斷號即停
                 }
             }
         }
