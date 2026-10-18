@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10180755</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10180805</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -998,6 +998,40 @@
                 loadItemDetails(items[0]);
             }
         }
+        /* 依照方向切換同分類的商品：direction 為 -1 (上一個) 或 1 (下一個) */
+        function switchItemByStep(direction) {
+            const items = database[currentCat] || [];
+            if (items.length <= 1) return;
+        
+            // 找到當前商品在該分類中的 index
+            const currentIndex = items.findIndex(p => p.id === (currentItem ? currentItem.id : ''));
+            if (currentIndex === -1) return;
+        
+            let targetIndex = currentIndex + direction;
+        
+            // 邊界防護：不超出列表首尾（若想循環切換，可改為 targetIndex = (targetIndex + items.length) % items.length）
+            if (targetIndex < 0) targetIndex = 0;
+            if (targetIndex >= items.length) targetIndex = items.length - 1;
+        
+            if (targetIndex === currentIndex) return; // 已經在第一筆或最後一筆
+        
+            const nextItem = items[targetIndex];
+        
+            // 1. 同步更新側邊欄按鈕的 active 狀態
+            const sidebarBtns = document.querySelectorAll('#sidebar-items .item-btn');
+            sidebarBtns.forEach((btn, idx) => {
+                if (idx === targetIndex) {
+                    btn.classList.add('active');
+                    // 讓側邊欄自動跟隨滾動到當前按鈕位置
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        
+            // 2. 載入目標商品的資料與圖文
+            loadItemDetails(nextItem);
+        }
         /* 輪播左右切換控制：direction 為 -1 (上一張) 或 1 (下一張) */
         function slideCarousel(direction) {
             const track = document.getElementById('carousel-track');
@@ -1322,15 +1356,33 @@
                 });
             }
         });
-
+        
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') toggleCartDrawer(false);
-            else if (e.key === 'ArrowLeft') {
+            // 若正在輸入框打字，不觸發快捷鍵
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        
+            // ESC 關閉詢問清單抽屜
+            if (e.key === 'Escape') {
+                toggleCartDrawer(false);
+                return;
+            }
+        
+            // 左右鍵：切換同一商品的輪播圖
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
                 slideCarousel(-1);
-            } 
-            // 按鍵盤「向右鍵」：切換下一張圖
-            else if (e.key === 'ArrowRight') {
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
                 slideCarousel(1);
+            }
+        
+            // 上下鍵：切換上一個 / 下一個商品 (led_01 ➔ led_02)
+            else if (e.key === 'ArrowUp') {
+                e.preventDefault(); // 攔截瀏覽器滾動
+                switchItemByStep(-1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault(); // 攔截瀏覽器滾動
+                switchItemByStep(1);
             }
         });
 
