@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191228</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191232</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -898,7 +898,7 @@
             setupNavigation();
             await loadProductsFromCSV();
             renderCategory(currentCat);
-
+            setupCarouselAutoplay();
             
             const track = document.getElementById('carousel-track');
             track.addEventListener('scroll', updateCarouselIndicator);
@@ -947,7 +947,59 @@
                 console.error("載入 CSV 失敗：", err);
             }
         }
-    
+        // ==========================================
+        // ⏱️ 輪播智慧自動播放控制 (Autoplay)
+        // ==========================================
+        let autoplayTimer = null;
+        const AUTOPLAY_INTERVAL = 4500; // 每 4.5 秒換一張（太快會焦慮，太慢會無感）
+        
+        function startAutoplay() {
+            stopAutoplay();
+            autoplayTimer = setInterval(() => {
+                const track = document.getElementById('carousel-track');
+                if (!track || track.children.length <= 1) return;
+        
+                const slideWidth = track.clientWidth;
+                const currentIndex = Math.round(track.scrollLeft / slideWidth);
+                const totalSlides = track.children.length;
+        
+                // 如果到了最後一張，自動循環回到第 1 張 (文字海報)
+                let targetIndex = currentIndex + 1;
+                if (targetIndex >= totalSlides) {
+                    targetIndex = 0;
+                }
+        
+                track.scrollTo({
+                    left: targetIndex * slideWidth,
+                    behavior: 'smooth'
+                });
+            }, AUTOPLAY_INTERVAL);
+        }
+        
+        function stopAutoplay() {
+            if (autoplayTimer) {
+                clearInterval(autoplayTimer);
+                autoplayTimer = null;
+            }
+        }
+        
+        // 綁定智慧互動：使用者看圖/點擊時暫停，離開時恢復
+        function setupCarouselAutoplay() {
+            const track = document.getElementById('carousel-track');
+            const wrapper = document.querySelector('.carousel-wrapper');
+            if (!wrapper || !track) return;
+        
+            // 滑鼠移入輪播框 -> 暫停播放
+            wrapper.addEventListener('mouseenter', stopAutoplay);
+            // 滑鼠移出輪播框 -> 恢復自動播放
+            wrapper.addEventListener('mouseleave', startAutoplay);
+        
+            // 手機端觸控互動：手指按住時暫停，放開後重新計時
+            track.addEventListener('touchstart', stopAutoplay, { passive: true });
+            track.addEventListener('touchend', () => {
+                startAutoplay();
+            }, { passive: true });
+        }
         function setupNavigation() {
             const buttons = document.querySelectorAll('#top-nav .nav-btn');
             buttons.forEach(btn => {
@@ -1500,7 +1552,7 @@
 
             const cartIds = Object.keys(cart);
             if (cartIds.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;">尚未加入任何項目</p>`;
+                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;"  id="cart-text">尚未加入任何項目</p>`;
                 document.getElementById('cart-counter').innerText = 0;
                 document.getElementById('cart-drawer-total').innerText = `$0`;
                 return;
