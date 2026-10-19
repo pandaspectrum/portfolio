@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191205</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191435</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1092,68 +1092,113 @@
                 navBar.classList.add('animate-hint');
             }
         }
-        /* 1. 從清單中移除特定項目 (依據 index 或 id) */
-        function removeCartItem(index) {
-            if (index >= 0 && index < cart.length) {
-                cart.splice(index, 1);
+        /* ========================================================
+           🛒 購物車/詢問清單管理函式 (適配 Key-Value 物件結構)
+        ======================================================== */
+        
+        // 1. 單項刪除特定商品
+        function removeCartItem(id) {
+            if (cart[id]) {
+                delete cart[id];
                 updateCartUI();
             }
         }
         
-        /* 2. 一鍵清空整個詢問清單 */
+        // 2. 一鍵清空整個詢問清單
         function clearCart() {
-            if (cart.length === 0) return;
-            
+            const cartIds = Object.keys(cart);
+            if (cartIds.length === 0) return;
+        
             const confirmMsg = currentLang === 'zh' ? '確定要清空所有詢問項目嗎？' : 'Clear all items from your inquiry list?';
             if (confirm(confirmMsg)) {
-                cart = [];
+                cart = {}; // 清空物件
                 updateCartUI();
             }
         }
         
-        /* 3. 渲染詢問清單抽屜內容 (加入 ✕ 移除 與 清空按鈕) */
+        // 3. 完美修復後的 updateCartUI (完全對接您原本的 ID 與 Theme 光暈)
+        /* 3. 完美對接您原始 ID 與物件結構的 updateCartUI */
         function updateCartUI() {
-            const listContainer = document.getElementById('cart-list-container');
-            const badgeEl = document.getElementById('cart-badge');
-            const copyBtn = document.getElementById('copy-cart-btn');
-            const clearBtn = document.getElementById('clear-cart-btn');
+            let count = 0;
+            let total = 0;
+            const container = document.getElementById('cart-list-container');
+            if (!container) return;
+            container.innerHTML = '';
         
-            // 更新頂端浮動按鈕上的數量徽章
-            if (badgeEl) {
-                badgeEl.innerText = cart.length;
-                badgeEl.style.display = cart.length > 0 ? 'inline-block' : 'none';
-            }
+            const cartIds = Object.keys(cart);
+            const counterEl = document.getElementById('cart-counter');
+            const totalEl = document.getElementById('cart-drawer-total');
         
-            if (!listContainer) return;
-            listContainer.innerHTML = '';
-        
-            if (cart.length === 0) {
-                listContainer.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
-                if (copyBtn) copyBtn.disabled = true;
-                if (clearBtn) clearBtn.style.display = 'none';
+            if (cartIds.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">EMPTY :(</p>`;
+                if (counterEl) counterEl.innerText = 0;
+                if (totalEl) totalEl.innerText = `$0`;
                 return;
             }
         
-            if (copyBtn) copyBtn.disabled = false;
-            if (clearBtn) clearBtn.style.display = 'block';
+            cartIds.forEach(id => {
+                const qty = cart[id];
+                count += qty;
         
-            // 依序列出項目，每項右側附帶一個簡約的 ✕
-            cart.forEach((item, index) => {
-                const title = currentLang === 'zh' ? item.name_zh : item.name_en;
-                const priceStr = item.price > 0 ? `$${item.price}` : I18N[currentLang].customPrice;
+                let prod = null;
+                let foundCat = 'parts';
         
-                const row = document.createElement('div');
-                row.className = 'cart-item-row';
-                row.innerHTML = `
-                    <div class="cart-item-info">
-                        <span class="cart-item-name">${title}</span>
-                        <span class="cart-item-price">${priceStr}</span>
-                    </div>
-                    <button class="cart-remove-btn" onclick="removeCartItem(${index})" title="移除此項">✕</button>
-                `;
-                listContainer.appendChild(row);
+                for (const [catKey, items] of Object.entries(database)) {
+                    const found = items.find(p => p.id === id);
+                    if (found) {
+                        prod = found;
+                        foundCat = prod.category || catKey;
+                        break;
+                    }
+                }
+        
+                if (prod) {
+                    const subtotal = (prod.price || 0) * qty;
+                    total += subtotal;
+        
+                    const theme = (typeof categoryThemeMap !== 'undefined' && categoryThemeMap[foundCat]) 
+                        ? categoryThemeMap[foundCat] 
+                        : { color: '#a5f3fc', glow: 'rgba(165, 243, 252, 0.2)' };
+        
+                    const row = document.createElement('div');
+                    row.className = 'cart-row';
+                    row.style.setProperty('--item-color', theme.color);
+                    row.style.setProperty('--item-glow', theme.glow);
+                    row.style.display = 'flex';
+                    row.style.alignItems = 'center';
+                    row.style.justifyContent = 'space-between';
+                    row.style.padding = '8px 0';
+                    row.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+        
+                    row.innerHTML = `
+                        <div style="flex: 1; padding-right: 8px;">
+                            <div style="font-weight: 500; color: #fff; font-size: 0.9rem;">
+                                ${currentLang === 'zh' ? prod.name_zh : prod.name_en}
+                            </div>
+                            <div style="color: var(--text-sub); font-size: 0.75rem; margin-top: 2px;">
+                                ${prod.price > 0 ? `$${prod.price}` : (currentLang === 'zh' ? '客製討論' : 'Inquire')} × ${qty}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="font-weight: bold; color: ${theme.color}; font-size: 0.95rem; text-shadow: 0 0 8px ${theme.glow};">
+                                ${prod.price > 0 ? `$${subtotal}` : (currentLang === 'zh' ? '洽詢' : 'TBD')}
+                            </div>
+                            <!-- 單獨刪除此項目按鈕 -->
+                            <button onclick="removeCartItem('${id}')" 
+                                    style="background: transparent; border: none; color: rgba(255,255,255,0.3); font-size: 1rem; cursor: pointer; padding: 2px 6px; transition: color 0.2s;"
+                                    onmouseover="this.style.color='#ef4444'" 
+                                    onmouseout="this.style.color='rgba(255,255,255,0.3)'"
+                                    title="移除此項">✕</button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                }
             });
+        
+            if (counterEl) counterEl.innerText = count;
+            if (totalEl) totalEl.innerText = `$${total}`;
         }
+        
         function renderCategory(catKey) {
             const items = database[catKey] || [];
             const sidebarContainer = document.getElementById('sidebar-items');
