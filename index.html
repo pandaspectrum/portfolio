@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191445</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191505</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1130,9 +1130,10 @@
             const totalEl = document.getElementById('cart-drawer-total');
         
             if (cartIds.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">EMPTY :(</p>`;
+
                 if (counterEl) counterEl.innerText = 0;
                 if (totalEl) totalEl.innerText = `$0`;
+                listContainer.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
                 return;
             }
         
@@ -1740,7 +1741,7 @@
      
         function copyCartText() {
             const cartIds = Object.keys(cart);
-            if (keys.length === 0) {
+            if (cartIds.length === 0) {
                 //alert('清單內尚無商品！');
                 alert(I18N[currentLang].inquiryCartEmptyAlert);
                 return;
