@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191515</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191540</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1133,7 +1133,8 @@
 
                 if (counterEl) counterEl.innerText = 0;
                 if (totalEl) totalEl.innerText = `$0`;
-                cart-list-container.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
+                //container.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
+                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">EMPTY :(</p>`;
                 return;
             }
         
