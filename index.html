@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191005</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191145</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -850,10 +850,10 @@
 
             <div class="compact-action-bar" id="purchase-bar">
                 <div>
-                    <span style="font-size:0.75rem; color:var(--text-sub);">單價：</span>
+                    <span style="font-size:0.75rem; color:var(--text-sub);" id="price-label">售價：</span>
                     <span class="price-badge" id="product-price">$0</span>
                 </div>
-                <button class="btn-add-cart" id="btn-add-cart" onclick="addToCartCurrent()">+ 加入詢問清單</button>
+                <button class="btn-add-cart" id="btn-add-cart" onclick="addToCartCurrent()">+ 加入興趣清單</button>
             </div>
 
             <div class="deep-dive-grid" id="deep-dive-container">
@@ -872,18 +872,18 @@
     <div class="cart-backdrop" id="cart-backdrop" onclick="toggleCartDrawer(false)"></div>
     <div class="cart-drawer" id="cart-drawer">
         <div class="cart-header">
-            <h3 style="font-size:1rem;">🛒 詢問清單</h3>
+            <h3 style="font-size:1rem;" id="cart-drawer-title">🛒 詢問清單</h3>
             <button onclick="toggleCartDrawer()" style="background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer;">✕</button>
         </div>
         <div class="cart-items" id="cart-list-container">
-            <p style="color:var(--text-sub); font-size:0.8rem;">目前無商品</p>
+            <p style="color:var(--text-sub); font-size:0.8rem;">尚未加入任何項目</p>
         </div>
         <div class="cart-footer">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
-                <span>預估合計：</span>
+                <span id="estimation">預估合計：</span>
                 <span id="cart-drawer-total" style="color:var(--theme-accent); font-weight:bold;">$0</span>
             </div>
-            <button class="copy-all-btn" onclick="copyCartText()">📋 複製清單</button>
+            <button class="copy-all-btn" onclick="copyCartText()" id="copy-cart-btn">📋 複製興趣內容</button>
         </div>
     </div>
 
@@ -1259,7 +1259,7 @@
         const I18N = {
             zh: {
                 langBtn: 'TW',
-                priceLabel: '價格',
+                priceLabel: '售價：',
                 customPrice: '客製討論',
                 addInquiry: '+ 加入興趣清單',
                 viewCart: '📋 查看興趣清單',
@@ -1272,12 +1272,13 @@
                 addedToCartAlert: '已加入興趣清單！',
                 dive1Label: '規格',
                 dive2Label: '功能',
+                estimation: '預估合計：',
                 docBtn: '📖 詳細介紹 ↗',
                 safetyNotice: '⚠️ 本站火舞耗材與客製電路裝備專為專業演出與訓練設計，請嚴格遵守火具點火與鋰電池充放電安全規範。⚠️'
             },
             en: {
                 langBtn: 'EN',
-                priceLabel: 'Price',
+                priceLabel: 'Price :',
                 customPrice: 'Inquire',
                 addInquiry: '+ Add to Inquiry',
                 viewCart: '📋 View Inquiry List',
@@ -1290,6 +1291,7 @@
                 addedToCartAlert: 'Added to inquiry list!',
                 dive1Label: 'Specs',
                 dive2Label: 'Features',
+                estimation: 'Estimated sum :',
                 docBtn: '📖 Documentation ↗',
                 safetyNotice: '⚠️ Props and electronics are engineered for professional flow arts. Users assume full responsibility for fire and electrical safety.⚠️'
             }
@@ -1329,7 +1331,7 @@
                 const dive2El = document.getElementById('dive-text-2');
                 if (dive1El) dive1El.innerText = currentLang === 'zh' ? currentItem.dive1_zh : currentItem.dive1_en;
                 if (dive2El) dive2El.innerText = currentLang === 'zh' ? currentItem.dive2_zh : currentItem.dive2_en;
-        
+
                 // 規格與功能前綴標題 (若有 #dive-label-1, #dive-label-2)
                 const diveLabel1 = document.getElementById('dive-label-1');
                 const diveLabel2 = document.getElementById('dive-label-2');
@@ -1363,7 +1365,7 @@
             }
         
             // 4. 加入詢問按鈕
-            const addToCartBtn = document.getElementById('add-to-cart-btn');
+            const addToCartBtn = document.getElementById('btn-add-cart');
             if (addToCartBtn) {
                 addToCartBtn.innerText = dict.addInquiry;
             }
@@ -1371,7 +1373,10 @@
             // 5. 購物車/詢問清單抽屜切換
             const cartTitle = document.getElementById('cart-drawer-title');
             if (cartTitle) cartTitle.innerText = dict.cartTitle;
-        
+            const estimationEl = document.getElementById('estimation');
+            if (estimationEl) estimationEl.innerText = dict.estimation;           
+            const ecartE1 = document.getElementById('emptyCart');
+            if (ecartE1) estimationEl.innerText = dict.cart-list-container;
             const copyBtn = document.getElementById('copy-cart-btn');
             if (copyBtn) copyBtn.innerText = dict.copyCartBtn;
         
@@ -1495,7 +1500,7 @@
 
             const cartIds = Object.keys(cart);
             if (cartIds.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;">目前無商品</p>`;
+                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;">尚未加入任何項目</p>`;
                 document.getElementById('cart-counter').innerText = 0;
                 document.getElementById('cart-drawer-total').innerText = `$0`;
                 return;
