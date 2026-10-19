@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191540</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191550</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -955,7 +955,7 @@
             </div>
             <button class="copy-all-btn" onclick="copyCartText()" id="copy-cart-btn">📋 複製興趣內容</button>
             <!-- 一鍵清空按鈕（簡約小字，平常不搶鏡） -->
-            <button id="clear-cart-btn" class="cart-clear-link" onclick="clearCart()"> 清空清單 </button>
+            <button id="clear-cart-btn" class="cart-clear-link" onclick="clearCart()"> 全部清除 </button>
         </div>
     </div>
 
@@ -1133,8 +1133,8 @@
 
                 if (counterEl) counterEl.innerText = 0;
                 if (totalEl) totalEl.innerText = `$0`;
-                //container.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
-                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">EMPTY :(</p>`;
+                container.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
+                //container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">EMPTY :(</p>`;
                 return;
             }
         
@@ -1547,7 +1547,8 @@
                     sidebarBtns[index].innerText = currentLang === 'zh' ? item.name_zh : item.name_en;
                 }
             });
-        
+            const clearbtnE1 = document.getElementById('clear-cart-btn');
+            if (clearbtnE1) clearbtnE1.innerText = currentLang === 'zh' ? currentItem.clearcart : currentItem.clearcart;
             // 3. 當前商品詳情與輪播首圖切換
             if (currentItem) {
                 // 價格切換
