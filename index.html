@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191232</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191332</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -505,6 +505,76 @@
             margin-bottom: 14px;
         }
         .cart-items { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        /* ========================================================
+           🛒 詢問清單項目列與刪除按鈕
+        ======================================================== */
+        .cart-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .cart-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .cart-item-name {
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+        
+        .cart-item-price {
+            color: var(--theme-accent);
+            font-size: 0.82rem;
+        }
+        
+        /* 極簡 ✕ 移除按鈕 */
+        .cart-remove-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 1rem;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.2s ease;
+            border-radius: 4px;
+        }
+        
+        .cart-remove-btn:hover {
+            color: #ef4444; /* 懸停時轉為警示紅 */
+            transform: scale(1.15);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        /* 一鍵清空連結按鈕 */
+        .cart-clear-link {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.78rem;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
+            text-decoration: underline;
+            transition: color 0.2s ease;
+        }
+        
+        .cart-clear-link:hover {
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .cart-empty-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            padding: 40px 0;
+            font-size: 0.9rem;
+        }
         .cart-row {
             display: flex;
             justify-content: space-between;
@@ -876,7 +946,7 @@
             <button onclick="toggleCartDrawer()" style="background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer;">✕</button>
         </div>
         <div class="cart-items" id="cart-list-container">
-            <p style="color:var(--text-sub); font-size:0.8rem;" id="cart-text">尚未加入任何項目</p>
+            <p style="color:var(--text-sub); font-size:0.8rem;">EMPTY :(</p>
         </div>
         <div class="cart-footer">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
@@ -884,6 +954,8 @@
                 <span id="cart-drawer-total" style="color:var(--theme-accent); font-weight:bold;">$0</span>
             </div>
             <button class="copy-all-btn" onclick="copyCartText()" id="copy-cart-btn">📋 複製興趣內容</button>
+            <!-- 一鍵清空按鈕（簡約小字，平常不搶鏡） -->
+            <button id="clear-cart-btn" class="cart-clear-link" onclick="clearCart()"> 清空清單 </button>
         </div>
     </div>
 
@@ -1020,7 +1092,68 @@
                 navBar.classList.add('animate-hint');
             }
         }
-
+        /* 1. 從清單中移除特定項目 (依據 index 或 id) */
+        function removeCartItem(index) {
+            if (index >= 0 && index < cart.length) {
+                cart.splice(index, 1);
+                updateCartUI();
+            }
+        }
+        
+        /* 2. 一鍵清空整個詢問清單 */
+        function clearCart() {
+            if (cart.length === 0) return;
+            
+            const confirmMsg = currentLang === 'zh' ? '確定要清空所有詢問項目嗎？' : 'Clear all items from your inquiry list?';
+            if (confirm(confirmMsg)) {
+                cart = [];
+                updateCartUI();
+            }
+        }
+        
+        /* 3. 渲染詢問清單抽屜內容 (加入 ✕ 移除 與 清空按鈕) */
+        function updateCartUI() {
+            const listContainer = document.getElementById('cart-items-list');
+            const badgeEl = document.getElementById('cart-badge');
+            const copyBtn = document.getElementById('copy-cart-btn');
+            const clearBtn = document.getElementById('clear-cart-btn');
+        
+            // 更新頂端浮動按鈕上的數量徽章
+            if (badgeEl) {
+                badgeEl.innerText = cart.length;
+                badgeEl.style.display = cart.length > 0 ? 'inline-block' : 'none';
+            }
+        
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+        
+            if (cart.length === 0) {
+                listContainer.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
+                if (copyBtn) copyBtn.disabled = true;
+                if (clearBtn) clearBtn.style.display = 'none';
+                return;
+            }
+        
+            if (copyBtn) copyBtn.disabled = false;
+            if (clearBtn) clearBtn.style.display = 'block';
+        
+            // 依序列出項目，每項右側附帶一個簡約的 ✕
+            cart.forEach((item, index) => {
+                const title = currentLang === 'zh' ? item.name_zh : item.name_en;
+                const priceStr = item.price > 0 ? `$${item.price}` : I18N[currentLang].customPrice;
+        
+                const row = document.createElement('div');
+                row.className = 'cart-item-row';
+                row.innerHTML = `
+                    <div class="cart-item-info">
+                        <span class="cart-item-name">${title}</span>
+                        <span class="cart-item-price">${priceStr}</span>
+                    </div>
+                    <button class="cart-remove-btn" onclick="removeCartItem(${index})" title="移除此項">✕</button>
+                `;
+                listContainer.appendChild(row);
+            });
+        }
         function renderCategory(catKey) {
             const items = database[catKey] || [];
             const sidebarContainer = document.getElementById('sidebar-items');
@@ -1316,7 +1449,6 @@
                 addInquiry: '+ 加入興趣清單',
                 viewCart: '📋 查看興趣清單',
                 cartTitle: '📋 興趣清單',
-                emptyCart: '尚未加入任何項目',
                 copyCartBtn: '📋 複製興趣內容',
                 copiedSuccess: '✅ 清單已複製！可直接貼給官方粉專或 Line 詢問。',
                 copyFailed: '⚠️ 複製失敗，請手動複製文字。',
@@ -1335,7 +1467,6 @@
                 addInquiry: '+ Add to Inquiry',
                 viewCart: '📋 View Inquiry List',
                 cartTitle: '📋 Inquiry List',
-                emptyCart: 'Your inquiry list is empty',
                 copyCartBtn: '📋 Copy Inquiry List',
                 copiedSuccess: '✅ Inquiry list copied! Paste it to message us directly.',
                 copyFailed: '⚠️ Copy failed, please copy manually.',
@@ -1427,8 +1558,6 @@
             if (cartTitle) cartTitle.innerText = dict.cartTitle;
             const estimationEl = document.getElementById('estimation');
             if (estimationEl) estimationEl.innerText = dict.estimation;           
-            const ecartE1 = document.getElementById('cart-text');
-            if (ecartE1) ecartE1.innerText = dict.emptyCart;
             const copyBtn = document.getElementById('copy-cart-btn');
             if (copyBtn) copyBtn.innerText = dict.copyCartBtn;
         
@@ -1552,7 +1681,7 @@
 
             const cartIds = Object.keys(cart);
             if (cartIds.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;"  id="cart-text">尚未加入任何項目</p>`;
+                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;">EMPTY :(</p>`;
                 document.getElementById('cart-counter').innerText = 0;
                 document.getElementById('cart-drawer-total').innerText = `$0`;
                 return;
