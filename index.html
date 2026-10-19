@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191145</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191228</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -876,7 +876,7 @@
             <button onclick="toggleCartDrawer()" style="background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer;">✕</button>
         </div>
         <div class="cart-items" id="cart-list-container">
-            <p style="color:var(--text-sub); font-size:0.8rem;">尚未加入任何項目</p>
+            <p style="color:var(--text-sub); font-size:0.8rem;" id="cart-text">尚未加入任何項目</p>
         </div>
         <div class="cart-footer">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
@@ -1375,7 +1375,7 @@
             if (cartTitle) cartTitle.innerText = dict.cartTitle;
             const estimationEl = document.getElementById('estimation');
             if (estimationEl) estimationEl.innerText = dict.estimation;           
-            const ecartE1 = document.getElementById('cart-list-container');
+            const ecartE1 = document.getElementById('cart-text');
             if (ecartE1) ecartE1.innerText = dict.emptyCart;
             const copyBtn = document.getElementById('copy-cart-btn');
             if (copyBtn) copyBtn.innerText = dict.copyCartBtn;
