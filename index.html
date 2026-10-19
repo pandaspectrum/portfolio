@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191435</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191445</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1564,7 +1564,7 @@
 
                 // 規格與功能前綴標題 (若有 #dive-label-1, #dive-label-2)
                 const diveLabel1 = document.getElementById('dive-title-1');
-                const diveLabel2 = document.getElementById('dive-tltle-2');
+                const diveLabel2 = document.getElementById('dive-title-2');
                 if (diveLabel1) diveLabel1.innerText = dict.dive1Label;
                 if (diveLabel2) diveLabel2.innerText = dict.dive2Label;
         
@@ -1737,23 +1737,37 @@
                 backdrop.classList.remove('open');
             }
         }
-
+     
         function copyCartText() {
-            const allProducts = Object.values(database).flat();
-            const keys = Object.keys(cart);
+            const cartIds = Object.keys(cart);
             if (keys.length === 0) {
                 //alert('清單內尚無商品！');
                 alert(I18N[currentLang].inquiryCartEmptyAlert);
                 return;
             }
         
-        // 組成文字時也可以根據 currentLang 決定格式
             let text = currentLang === 'zh' ? "【勁梅演光 - 裝備詢問單】\n" : "【Panda'Spectrum - Inquiry List】\n";
-            cart.forEach(item => {
-                const name = currentLang === 'zh' ? item.name_zh : item.name_en;
-                text += `- ${name} x${item.qty} (${item.price > 0 ? '$' + item.price : I18N[currentLang].customPrice})\n`;
+            let total = 0;
+        
+            cartIds.forEach(id => {
+                let prod = null;
+                for (const items of Object.values(database)) {
+                    const found = items.find(p => p.id === id);
+                    if (found) { prod = found; break; }
+                }
+                if (prod) {
+                    const qty = cart[id];
+                    const name = currentLang === 'zh' ? prod.name_zh : prod.name_en;
+                    const priceText = prod.price > 0 ? `$${prod.price}` : (currentLang === 'zh' ? '客製討論' : 'Inquire');
+                    text += `- ${name} x${qty} (${priceText})\n`;
+                    if (prod.price > 0) total += prod.price * qty;
+                }
             });
-            
+        
+            if (total > 0) {
+                text += currentLang === 'zh' ? `\n總計參考金額: $${total}` : `\nEstimated Total: $${total}`;
+            }
+        
             navigator.clipboard.writeText(text).then(() => {
                 alert(I18N[currentLang].copiedSuccess);
             }).catch(() => {
