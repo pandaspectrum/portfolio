@@ -946,7 +946,7 @@
             <button onclick="toggleCartDrawer()" style="background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer;">✕</button>
         </div>
         <div class="cart-items" id="cart-list-container">
-            <p style="color:var(--text-sub); font-size:0.8rem;">EMPTY :(</p>
+            <p style="color:var(--text-sub); font-size:0.8rem;">空的 :(</p>
         </div>
         <div class="cart-footer">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
@@ -1454,6 +1454,7 @@
                 copyFailed: '⚠️ 複製失敗，請手動複製文字。',
                 inquiryCartEmptyAlert: '清單內目前沒有任何項目喔！',
                 addedToCartAlert: '已加入興趣清單！',
+                emptycart: '怎麼還是空的 :('
                 dive1Label: '規格',
                 dive2Label: '功能',
                 estimation: '預估合計：',
@@ -1472,6 +1473,7 @@
                 copyFailed: '⚠️ Copy failed, please copy manually.',
                 inquiryCartEmptyAlert: 'Your inquiry list is empty!',
                 addedToCartAlert: 'Added to inquiry list!',
+                emptycart: 'Why still empty :('
                 dive1Label: 'Specs',
                 dive2Label: 'Features',
                 estimation: 'Estimated sum :',
@@ -1516,8 +1518,8 @@
                 if (dive2El) dive2El.innerText = currentLang === 'zh' ? currentItem.dive2_zh : currentItem.dive2_en;
 
                 // 規格與功能前綴標題 (若有 #dive-label-1, #dive-label-2)
-                const diveLabel1 = document.getElementById('dive-label-1');
-                const diveLabel2 = document.getElementById('dive-label-2');
+                const diveLabel1 = document.getElementById('dive-title-1');
+                const diveLabel2 = document.getElementById('dive-tltle-2');
                 if (diveLabel1) diveLabel1.innerText = dict.dive1Label;
                 if (diveLabel2) diveLabel2.innerText = dict.dive2Label;
         
@@ -1673,65 +1675,6 @@
             about:     { color: '#e0c3fc', glow: 'rgba(224, 195, 252, 0.3)' }
         };
 
-        function updateCartUI() {
-            let count = 0;
-            let total = 0;
-            const container = document.getElementById('cart-list-container');
-            container.innerHTML = '';
-
-            const cartIds = Object.keys(cart);
-            if (cartIds.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:8px 0;">EMPTY :(</p>`;
-                document.getElementById('cart-counter').innerText = 0;
-                document.getElementById('cart-drawer-total').innerText = `$0`;
-                return;
-            }
-
-            cartIds.forEach(id => {
-                const qty = cart[id];
-                count += qty;
-
-                let prod = null;
-                let foundCat = 'parts';
-
-                for (const [catKey, items] of Object.entries(database)) {
-                    const found = items.find(p => p.id === id);
-                    if (found) {
-                        prod = found;
-                        foundCat = prod.category || catKey;
-                        break;
-                    }
-                }
-
-                if (prod) {
-                    const subtotal = prod.price * qty;
-                    total += subtotal;
-
-                    const theme = categoryThemeMap[foundCat] || { color: '#a5f3fc', glow: 'rgba(165, 243, 252, 0.2)' };
-
-                    const row = document.createElement('div');
-                    row.className = 'cart-row';
-                    row.style.setProperty('--item-color', theme.color);
-                    row.style.setProperty('--item-glow', theme.glow);
-
-                    row.innerHTML = `
-                        <div>
-                            <div style="font-weight: 500; color: #fff;">${currentLang === 'zh' ? prod.name_zh : prod.name_en}</div>
-                            <div style="color:var(--text-sub); font-size:0.75rem; margin-top:2px;">
-                                $${prod.price} × ${qty}
-                            </div>
-                        </div>
-                        <div style="font-weight: bold; color: ${theme.color}; font-size: 0.95rem; text-shadow: 0 0 8px ${theme.glow};">
-                            $${subtotal}
-                        </div>
-                    `;
-                    container.appendChild(row);
-                }
-            });
-
-            document.getElementById('cart-counter').innerText = count;
-            document.getElementById('cart-drawer-total').innerText = `$${total}`;
-        }
 
         function toggleCartDrawer(forceState = null) {
             const drawer = document.getElementById('cart-drawer');
