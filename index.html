@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191550</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191555</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1133,7 +1133,7 @@
 
                 if (counterEl) counterEl.innerText = 0;
                 if (totalEl) totalEl.innerText = `$0`;
-                container.innerHTML = `<div class="cart-empty-text">${I18N[currentLang].emptyCart}</div>`;
+                container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">${I18N[currentLang].emptyCart}</p>`;
                 //container.innerHTML = `<p style="color:var(--text-sub); font-size:0.8rem; padding:16px 0; text-align:center;">EMPTY :(</p>`;
                 return;
             }
@@ -1548,7 +1548,7 @@
                 }
             });
             const clearbtnE1 = document.getElementById('clear-cart-btn');
-            if (clearbtnE1) clearbtnE1.innerText = currentLang === 'zh' ? currentItem.clearcart : currentItem.clearcart;
+            if (clearbtnE1) clearbtnE1.innerText = dict.clearcart;
             // 3. 當前商品詳情與輪播首圖切換
             if (currentItem) {
                 // 價格切換
