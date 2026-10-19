@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10180805</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191005</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -858,11 +858,11 @@
 
             <div class="deep-dive-grid" id="deep-dive-container">
                 <div class="dive-card">
-                    <div class="dive-title">⚙️ <span id="dive-title-1">規格特性</span></div>
+                    <div class="dive-title">⚙️ <span id="dive-title-1">規格</span></div>
                     <div class="dive-text" id="dive-text-1">正在載入詳細內容...</div>
                 </div>
                 <div class="dive-card">
-                    <div class="dive-title">💡 <span id="dive-title-2">技術功能</span></div>
+                    <div class="dive-title">💡 <span id="dive-title-2">功能</span></div>
                     <div class="dive-text" id="dive-text-2">正在載入詳細內容...</div>
                 </div>
             </div>
@@ -1070,7 +1070,8 @@
             const thisLoadId = ++currentLoadId;
         
             // 更新單價與規格特性
-            document.getElementById('product-price').innerText = item.price > 0 ? `$${item.price}` : '客製討論';
+            const words = currentLang === 'zh' ? '客製討論' : 'Inquire'; 
+            document.getElementById('product-price').innerText = item.price > 0 ? `$${item.price}` : words;
             document.getElementById('dive-text-1').innerText = currentLang === 'zh' ? item.dive1_zh : item.dive1_en;
             document.getElementById('dive-text-2').innerText = currentLang === 'zh' ? item.dive2_zh : item.dive2_en;
         
@@ -1254,11 +1255,55 @@
             `);
             return `data:image/svg+xml;utf8,${encoded}`;
         }
-
+        // 多語系字典定義（集中管理，乾淨好改）
+        const I18N = {
+            zh: {
+                langBtn: 'TW',
+                priceLabel: '價格',
+                customPrice: '客製討論',
+                addInquiry: '+ 加入興趣清單',
+                viewCart: '📋 查看興趣清單',
+                cartTitle: '📋 興趣清單',
+                emptyCart: '尚未加入任何項目',
+                copyCartBtn: '📋 複製興趣內容',
+                copiedSuccess: '✅ 清單已複製！可直接貼給官方粉專或 Line 詢問。',
+                copyFailed: '⚠️ 複製失敗，請手動複製文字。',
+                inquiryCartEmptyAlert: '清單內目前沒有任何項目喔！',
+                addedToCartAlert: '已加入興趣清單！',
+                dive1Label: '規格',
+                dive2Label: '功能',
+                docBtn: '📖 詳細介紹 ↗',
+                safetyNotice: '⚠️ 本站火舞耗材與客製電路裝備專為專業演出與訓練設計，請嚴格遵守火具點火與鋰電池充放電安全規範。⚠️'
+            },
+            en: {
+                langBtn: 'EN',
+                priceLabel: 'Price',
+                customPrice: 'Inquire',
+                addInquiry: '+ Add to Inquiry',
+                viewCart: '📋 View Inquiry List',
+                cartTitle: '📋 Inquiry List',
+                emptyCart: 'Your inquiry list is empty',
+                copyCartBtn: '📋 Copy Inquiry List',
+                copiedSuccess: '✅ Inquiry list copied! Paste it to message us directly.',
+                copyFailed: '⚠️ Copy failed, please copy manually.',
+                inquiryCartEmptyAlert: 'Your inquiry list is empty!',
+                addedToCartAlert: 'Added to inquiry list!',
+                dive1Label: 'Specs',
+                dive2Label: 'Features',
+                docBtn: '📖 Documentation ↗',
+                safetyNotice: '⚠️ Props and electronics are engineered for professional flow arts. Users assume full responsibility for fire and electrical safety.⚠️'
+            }
+        };
+        
         function toggleLanguage() {
             currentLang = currentLang === 'zh' ? 'en' : 'zh';
-            document.getElementById('lang-text').innerText = currentLang === 'zh' ? 'TW' : 'EN';
-
+            const dict = I18N[currentLang];
+        
+            // 1. 語言按鈕文字
+            const langBtn = document.getElementById('lang-text');
+            if (langBtn) langBtn.innerText = dict.langBtn;
+        
+            // 2. 側邊欄商品列表文字切換
             const items = database[currentCat] || [];
             const sidebarBtns = document.querySelectorAll('#sidebar-items .item-btn');
             items.forEach((item, index) => {
@@ -1266,40 +1311,77 @@
                     sidebarBtns[index].innerText = currentLang === 'zh' ? item.name_zh : item.name_en;
                 }
             });
-
+        
+            // 3. 當前商品詳情與輪播首圖切換
             if (currentItem) {
-                document.getElementById('dive-text-1').innerText = currentLang === 'zh' ? currentItem.dive1_zh : currentItem.dive1_en;
-                document.getElementById('dive-text-2').innerText = currentLang === 'zh' ? currentItem.dive2_zh : currentItem.dive2_en;
-
-                const heroCard = document.querySelector('.carousel-slide .hero-card');
-                if (heroCard) {
+                // 價格切換
+                const priceEl = document.getElementById('product-price');
+                if (priceEl) {
+                    priceEl.innerText = currentItem.price > 0 ? `$${currentItem.price}` : dict.customPrice;
+                }
+        
+                // 價格標籤文字 (若 HTML 有獨立 label，例如 #price-label)
+                const priceLabelEl = document.getElementById('price-label');
+                if (priceLabelEl) priceLabelEl.innerText = dict.priceLabel;
+        
+                // 規格與功能說明切換
+                const dive1El = document.getElementById('dive-text-1');
+                const dive2El = document.getElementById('dive-text-2');
+                if (dive1El) dive1El.innerText = currentLang === 'zh' ? currentItem.dive1_zh : currentItem.dive1_en;
+                if (dive2El) dive2El.innerText = currentLang === 'zh' ? currentItem.dive2_zh : currentItem.dive2_en;
+        
+                // 規格與功能前綴標題 (若有 #dive-label-1, #dive-label-2)
+                const diveLabel1 = document.getElementById('dive-label-1');
+                const diveLabel2 = document.getElementById('dive-label-2');
+                if (diveLabel1) diveLabel1.innerText = dict.dive1Label;
+                if (diveLabel2) diveLabel2.innerText = dict.dive2Label;
+        
+                // 關鍵修復：同時尋找最新版 .hero-overlay-content 與舊版 .hero-card
+                const heroContent = document.querySelector('.carousel-slide .hero-overlay-content') || 
+                                    document.querySelector('.carousel-slide .hero-card');
+                
+                if (heroContent) {
                     const tags = currentLang === 'zh' ? currentItem.tags_zh : currentItem.tags_en;
                     const title = currentLang === 'zh' ? currentItem.name_zh : currentItem.name_en;
                     const desc = currentLang === 'zh' ? currentItem.desc_zh : currentItem.desc_en;
-
-                    const tagsContainer = heroCard.querySelector('.hero-tags');
+        
+                    const tagsContainer = heroContent.querySelector('.hero-tags');
                     if (tagsContainer) {
                         tagsContainer.innerHTML = tags.map(t => `<span class="hero-tag">${t}</span>`).join('');
                     }
-                    const titleEl = heroCard.querySelector('.hero-title');
+                    const titleEl = heroContent.querySelector('.hero-title');
                     if (titleEl) titleEl.innerText = title;
-
-                    const descEl = heroCard.querySelector('.hero-desc');
+                    
+                    const descEl = heroContent.querySelector('.hero-desc');
                     if (descEl) descEl.innerText = desc;
-
-                    const manualBtn = heroCard.querySelector('.manual-link-btn');
+        
+                    const manualBtn = heroContent.querySelector('.manual-link-btn');
                     if (manualBtn) {
-                        manualBtn.innerHTML = `📖 ${currentLang === 'zh' ? '詳細介紹' : 'Documentation'} ↗`;
+                        manualBtn.innerHTML = dict.docBtn;
                     }
                 }
             }
-
+        
+            // 4. 加入詢問按鈕
+            const addToCartBtn = document.getElementById('add-to-cart-btn');
+            if (addToCartBtn) {
+                addToCartBtn.innerText = dict.addInquiry;
+            }
+        
+            // 5. 購物車/詢問清單抽屜切換
+            const cartTitle = document.getElementById('cart-drawer-title');
+            if (cartTitle) cartTitle.innerText = dict.cartTitle;
+        
+            const copyBtn = document.getElementById('copy-cart-btn');
+            if (copyBtn) copyBtn.innerText = dict.copyCartBtn;
+        
+            // 6. 更新購物車內列表文字
             updateCartUI();
+        
+            // 7. 頁尾安全聲明
             const safetyEl = document.getElementById('footer-safety-notice');
             if (safetyEl) {
-                safetyEl.innerText = currentLang === 'zh'
-                    ? '⚠️ 本站火舞耗材與客製電路裝備專為專業演出與訓練設計，請嚴格遵守火具點火與鋰電池充放電安全規範。⚠️'
-                    : '⚠️ Props and electronics are engineered for professional flow arts. Users assume full responsibility for fire and electrical safety.⚠️';
+                safetyEl.innerText = dict.safetyNotice;
             }
         }
 
@@ -1391,6 +1473,7 @@
             cart[currentItem.id] = (cart[currentItem.id] || 0) + 1;
             updateCartUI();
             toggleCartDrawer(true);
+            // alert(I18N[currentLang].addedToCartAlert);
         }
 
         const categoryThemeMap = {
@@ -1485,26 +1568,22 @@
             const allProducts = Object.values(database).flat();
             const keys = Object.keys(cart);
             if (keys.length === 0) {
-                alert('清單內尚無商品！');
+                //alert('清單內尚無商品！');
+                alert(I18N[currentLang].inquiryCartEmptyAlert);
                 return;
             }
-
-            let text = `👋 您好！我想向【勁梅演光】諮詢以下品項：\n`;
-            text += `=========================\n`;
-            let total = 0;
-            keys.forEach(id => {
-                const p = allProducts.find(item => item.id === id);
-                const qty = cart[id];
-                const sub = p.price * qty;
-                total += sub;
-                text += `🔸 ${p.name_zh} × ${qty} ($${sub})\n`;
+        
+        // 組成文字時也可以根據 currentLang 決定格式
+            let text = currentLang === 'zh' ? "【勁梅演光 - 裝備詢問單】\n" : "【Panda'Spectrum - Inquiry List】\n";
+            cart.forEach(item => {
+                const name = currentLang === 'zh' ? item.name_zh : item.name_en;
+                text += `- ${name} x${item.qty} (${item.price > 0 ? '$' + item.price : I18N[currentLang].customPrice})\n`;
             });
-            text += `=========================\n`;
-            text += `💰 預估金額：$${total}\n\n`;
-            text += `（備註：長度規格 / 特殊訂製需求請在此填寫）`;
-
+            
             navigator.clipboard.writeText(text).then(() => {
-                alert('清單已成功複製！請直接前往 FB / IG 私訊貼上進行討論 👌\n也可以自行截圖分享詢問！ ');
+                alert(I18N[currentLang].copiedSuccess);
+            }).catch(() => {
+                alert(I18N[currentLang].copyFailed);
             });
         }
     </script>
