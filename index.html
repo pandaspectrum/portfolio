@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220124</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220210</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1209,23 +1209,31 @@
             if (counterEl) counterEl.innerText = count;
             if (totalEl) totalEl.innerText = `$${total}`;
         }
-        
         function renderCategory(catKey) {
+            renderCategoryWithTarget(catKey, null, null);
+        }
+        
+        function renderCategoryWithTarget(catKey, targetItemId = null, targetSlide = null) {
             const items = database[catKey] || [];
             const sidebarContainer = document.getElementById('sidebar-items');
             sidebarContainer.innerHTML = '';
-
+        
             const purchaseBar = document.getElementById('purchase-bar');
             const noBuyCats = ['service', 'agency', 'about'];
-            if (noBuyCats.includes(catKey)) {
-                purchaseBar.style.display = 'none';
-            } else {
-                purchaseBar.style.display = 'flex';
+            if (purchaseBar) {
+                purchaseBar.style.display = noBuyCats.includes(catKey) ? 'none' : 'flex';
             }
-
+        
+            // 決定要選中哪一筆：優先選 targetItemId，若無則預設選第 0 筆
+            let targetIndex = 0;
+            if (targetItemId) {
+                const foundIndex = items.findIndex(p => p.id === targetItemId);
+                if (foundIndex !== -1) targetIndex = foundIndex;
+            }
+        
             items.forEach((item, index) => {
                 const btn = document.createElement('button');
-                btn.className = `item-btn ${index === 0 ? 'active' : ''}`;
+                btn.className = `item-btn ${index === targetIndex ? 'active' : ''}`;
                 btn.innerText = currentLang === 'zh' ? item.name_zh : item.name_en;
                 btn.onclick = () => {
                     document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
@@ -1234,9 +1242,9 @@
                 };
                 sidebarContainer.appendChild(btn);
             });
-
+        
             if (items.length > 0) {
-                loadItemDetails(items[0]);
+                loadItemDetails(items[targetIndex], targetSlide);
             }
         }
         /* 依照方向切換同分類的商品：direction 為 -1 (上一個) 或 1 (下一個) */
@@ -1355,7 +1363,8 @@
             track.appendChild(heroSlide);
         
             // ⚡ 背景非同步探測底圖與後續圖片（完全不阻塞上面的文字呈現）
-            loadImagesInBackground(item, title, thisLoadId);
+            //loadImagesInBackground(item, title, thisLoadId);
+            loadImagesInBackground(item, title, thisLoadId, targetSlide);
         }
         // 計算圖片周圍邊緣像素的平均色彩 (HEX)// ⚡ 四角極速取色演算法：只讀取 4 個角，運算僅需 1~2 毫秒，零卡頓！
         function applyCornerAverageColor(imgElement, targetSlide) {
@@ -1417,9 +1426,19 @@
         }
         
         // ⚡ 徹底修復變數名稱的後台背景載入函式
-        async function loadImagesInBackground(item, title, loadId) {
+        async function loadImagesInBackground(item, title, loadId, targetSlide = null) {
             const track = document.getElementById('carousel-track');
-        
+            // 輔助函式：若剛好載到了目標 Slide，自動滑過去
+            const checkAndScrollToTarget = () => {
+                if (targetSlide && targetSlide > 1 && track.children.length >= targetSlide) {
+                    const slideWidth = track.clientWidth || 1;
+                    track.scrollTo({
+                        left: (targetSlide - 1) * slideWidth,
+                        behavior: 'smooth'
+                    });
+                    targetSlide = null; // 跳轉完成後清空，避免重複滑動
+                }
+            };
             // 1. 背景探測第 1 張圖
             const firstImg = await findImageWithExt(`${item.imgPrefix}01`);
             if (loadId !== currentLoadId) return;
@@ -1818,6 +1837,33 @@
             }
             return roman;
         }
+        /* 解析網址參數並自動導航到指定 分類 / 商品 / 圖片 */
+        function handleDeepLinking() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetCat = urlParams.get('cat');
+            const targetItem = urlParams.get('item');
+            const targetSlide = parseInt(urlParams.get('slide'), 10); // 1-based (1 代表第1頁)
+        
+            // 1. 如果有指定分類，且該分類存在
+            if (targetCat && database[targetCat]) {
+                currentCat = targetCat;
+        
+                // 更新頂端 Nav 狀態與主題色
+                document.querySelectorAll('#top-nav .nav-btn').forEach(btn => {
+                    if (btn.dataset.cat === targetCat) {
+                        btn.classList.add('active');
+                        const theme = btn.dataset.theme || targetCat;
+                        document.body.setAttribute('data-theme', theme);
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        
+            // 2. 渲染側邊欄清單（不先載入預設第 0 個，傳入 targetItem 指定載入）
+            renderCategoryWithTarget(currentCat, targetItem, targetSlide);
+        }
+        
     </script>
 
     <!-- 頁尾宣告區 -->
