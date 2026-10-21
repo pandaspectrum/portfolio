@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10191600</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220122</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -433,7 +433,8 @@
             border-radius: 10px;
             font-size: 0.72rem;
             color: #fff;
-            pointer-events: none;
+            /*pointer-events: none; */
+            z-index: 5; /* 關鍵：提高層級，確保永遠浮在海報底圖與內容層 (z-index: 2) 之上 */
         }
 
         .compact-action-bar {
@@ -915,7 +916,7 @@
                 <button class="carousel-nav-btn prev" id="carousel-prev-btn" onclick="slideCarousel(-1)" aria-label="上一張">‹</button>
                 <button class="carousel-nav-btn next" id="carousel-next-btn" onclick="slideCarousel(1)" aria-label="下一張">›</button>
 
-                <div class="carousel-indicator" id="carousel-num">1 / 1</div>
+               <div class="carousel-indicator" id="carousel-num" onclick="toggleRomanIndicator()" title="切換數字風格">I / I</div>
             </div>
 
             <div class="compact-action-bar" id="purchase-bar">
@@ -1311,8 +1312,8 @@
             track.innerHTML = '';
             track.scrollLeft = 0;
             track.scrollTo({ left: 0, behavior: 'instant' });
-            document.getElementById('carousel-num').innerText = '1 / 1';
-        
+            //document.getElementById('carousel-num').innerText = '1 / 1';
+            document.getElementById('carousel-num').innerText = useRomanIndicator ? 'I / I' : '1 / 1';
             const tags = currentLang === 'zh' ? item.tags_zh : item.tags_en;
             const title = currentLang === 'zh' ? item.name_zh : item.name_en;
             const desc = currentLang === 'zh' ? item.desc_zh : item.desc_en;
@@ -1457,15 +1458,24 @@
         }
         
         // 統一計算並刷新頁碼指示器
+   
+        let useRomanIndicator = true; 
+        
         function updateCarouselIndicator() {
             const track = document.getElementById('carousel-track');
-            if (!track || track.children.length === 0) return;
+            const indicatorEl = document.getElementById('carousel-num');
+            if (!track || track.children.length === 0 || !indicatorEl) return;
+        
             const slideWidth = track.clientWidth || 1;
             const currentIndex = Math.round(track.scrollLeft / slideWidth);
             const total = track.children.length;
-            document.getElementById('carousel-num').innerText = `${currentIndex + 1} / ${total}`;
+        
+            const curDisplay = useRomanIndicator ? toRoman(currentIndex + 1) : (currentIndex + 1);
+            const totDisplay = useRomanIndicator ? toRoman(total) : total;
+        
+            indicatorEl.innerText = `${curDisplay} / ${totDisplay}`;
         }
-
+        
         function checkImageExists(url) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -1705,7 +1715,7 @@
                 switchItemByStep(1);
             }
         });
-
+        
         function addToCartCurrent() {
             if (!currentItem || currentItem.price === 0) return;
             cart[currentItem.id] = (cart[currentItem.id] || 0) + 1;
@@ -1778,6 +1788,23 @@
             }).catch(() => {
                 alert(I18N[currentLang].copyFailed);
             });
+        }
+        /* 將阿拉伯數字轉為羅馬數字 */
+        function toRoman(num) {
+            if (!num || num <= 0) return num;
+            const lookup = [
+                ['M', 1000], ['CM', 900], ['D', 500], ['CD', 400],
+                ['C', 100],  ['XC', 90],  ['L', 50],  ['XL', 40],
+                ['X', 10],   ['IX', 9],   ['V', 5],   ['IV', 4],  ['I', 1]
+            ];
+            let roman = '';
+            for (const [letter, value] of lookup) {
+                while (num >= value) {
+                    roman += letter;
+                    num -= value;
+                }
+            }
+            return roman;
         }
     </script>
 
