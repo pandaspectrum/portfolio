@@ -978,7 +978,8 @@
         window.addEventListener('DOMContentLoaded', async () => {
             setupNavigation();
             await loadProductsFromCSV();
-            renderCategory(currentCat);
+            handleDeepLinking();
+            //renderCategory(currentCat);
             setupCarouselAutoplay();
             
             const track = document.getElementById('carousel-track');
@@ -1314,7 +1315,7 @@
         }
         // 用於防競態：標記目前最新點擊的載入序號
         let currentLoadId = 0;
-        async function loadItemDetails(item) {
+        async function loadItemDetails(item, targetSlide = null) {
             currentItem = item;
             const thisLoadId = ++currentLoadId;
         
