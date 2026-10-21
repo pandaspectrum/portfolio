@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220225</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220230</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1430,8 +1430,8 @@
         async function loadImagesInBackground(item, title, loadId, targetSlide = null) {
             const track = document.getElementById('carousel-track');
             // 輔助函式：若剛好載到了目標 Slide，自動滑過去
-            console.log("\n targetSlide : ");
-            console.log(targetSlide);
+           //console.log("\n targetSlide : ");
+           // console.log(targetSlide);
             
             const checkAndScrollToTarget = () => {
                 if (targetSlide && targetSlide > 1 && track.children.length >= targetSlide) {
@@ -1467,6 +1467,7 @@
                 const slide01 = createColorAdaptiveSlide(firstImg, title);
                 track.appendChild(slide01);
                 updateCarouselIndicator();
+                checkAndScrollToTarget();
             }
         
             // 2. 依序探測後續 02 ~ 15 號圖
@@ -1483,6 +1484,7 @@
                     const slide = createColorAdaptiveSlide(url, title);
                     track.appendChild(slide);
                     updateCarouselIndicator();
+                    checkAndScrollToTarget();
                 } else {
                     // 序號斷號即停
                     break;
