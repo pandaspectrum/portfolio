@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220230</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220306</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1094,6 +1094,7 @@
                     document.body.setAttribute('data-theme', theme);
                     currentCat = cat;
                     renderCategory(cat);
+                    syncUrlState(1); // ⚡ 換分類時重設 slide 為 1 並更新網址
                 });
             });
             // 手機端進站時，觸發一次輕微左右微擺提示 (0.5 秒後執行)
@@ -1209,7 +1210,9 @@
         
             if (counterEl) counterEl.innerText = count;
             if (totalEl) totalEl.innerText = `$${total}`;
+            syncUrlState();
         }
+        
         function renderCategory(catKey) {
             renderCategoryWithTarget(catKey, null, null);
         }
@@ -1366,6 +1369,7 @@
             // ⚡ 背景非同步探測底圖與後續圖片（完全不阻塞上面的文字呈現）
             //loadImagesInBackground(item, title, thisLoadId);
             loadImagesInBackground(item, title, thisLoadId, targetSlide);
+            syncUrlState(targetSlide || 1);
         }
         // 計算圖片周圍邊緣像素的平均色彩 (HEX)// ⚡ 四角極速取色演算法：只讀取 4 個角，運算僅需 1~2 毫秒，零卡頓！
         function applyCornerAverageColor(imgElement, targetSlide) {
@@ -1513,6 +1517,8 @@
             const totDisplay = useRomanIndicator ? toRoman(total) : total;
         
             indicatorEl.innerText = `${curDisplay} / ${totDisplay}`;
+            // ⚡ 當前圖片滑動停靠後，靜默更新網址上的 slide 參數
+            syncUrlState(currentIndex + 1);
         }
         
         function checkImageExists(url) {
@@ -1851,7 +1857,13 @@
             const targetCat = urlParams.get('cat');
             const targetItem = urlParams.get('item');
             const targetSlide = parseInt(urlParams.get('slide'), 10); // 1-based (1 代表第1頁)
+            const targetCart = urlParams.get('cart');
         
+            // ⚡ 1. 優先還原購物車清單
+            if (targetCart) {
+                cart = deserializeCart(targetCart);
+                updateCartUI(); // 徽章數字與清單立刻回填
+            }
             // 1. 如果有指定分類，且該分類存在
             if (targetCat && database[targetCat]) {
                 currentCat = targetCat;
@@ -1871,7 +1883,57 @@
             // 2. 渲染側邊欄清單（不先載入預設第 0 個，傳入 targetItem 指定載入）
             renderCategoryWithTarget(currentCat, targetItem, targetSlide);
         }
+        /* 1. 將 cart 物件編碼為字串 (例如 "led_01:1,parts_03:2") */
+        function serializeCart() {
+            const pairs = Object.entries(cart).map(([id, qty]) => `${id}:${qty}`);
+            return pairs.length > 0 ? pairs.join(',') : null;
+        }
         
+        /* 2. 解析網址的 cart 字串還原為 cart 物件 */
+        function deserializeCart(cartStr) {
+            const result = {};
+            if (!cartStr) return result;
+            cartStr.split(',').forEach(pair => {
+                const [id, qty] = pair.split(':');
+                if (id && qty) {
+                    const num = parseInt(qty, 10);
+                    if (!isNaN(num) && num > 0) result[id] = num;
+                }
+            });
+            return result;
+        }
+        
+        /* 3. 靜默更新網址列 (不重載網頁、不增加上一頁歷史) */
+        function syncUrlState(customSlide = null) {
+            const params = new URLSearchParams(window.location.search);
+        
+            // 同步分類與商品
+            if (currentCat) params.set('cat', currentCat);
+            if (currentItem && currentItem.id) params.set('item', currentItem.id);
+        
+            // 同步當前圖片頁碼 (1-based)
+            const track = document.getElementById('carousel-track');
+            let slideIdx = customSlide;
+            if (slideIdx === null && track && track.clientWidth > 0) {
+                slideIdx = Math.round(track.scrollLeft / track.clientWidth) + 1;
+            }
+            if (slideIdx && slideIdx > 1) {
+                params.set('slide', slideIdx);
+            } else {
+                params.delete('slide'); // 第 1 張預設省略，讓網址更簡潔
+            }
+        
+            // 同步購物車清單
+            const cartStr = serializeCart();
+            if (cartStr) {
+                params.set('cart', cartStr);
+            } else {
+                params.delete('cart');
+            }
+        
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState(null, '', newUrl);
+        }
     </script>
 
     <!-- 頁尾宣告區 -->
