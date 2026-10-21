@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220122</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220124</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -432,9 +432,17 @@
             padding: 2px 8px;
             border-radius: 10px;
             font-size: 0.72rem;
-            color: #fff;
-            /*pointer-events: none; */
+            color: #fff;            
             z-index: 5; /* 關鍵：提高層級，確保永遠浮在海報底圖與內容層 (z-index: 2) 之上 */
+            pointer-events: auto;/*pointer-events: none; */
+            cursor: pointer;
+            user-select: none;
+            letter-spacing: 1px; /* 羅馬數字微加字距質感更佳 */
+            transition: background 0.2s, transform 0.2s;
+        }
+        .carousel-indicator:hover {
+            background: rgba(0, 0, 0, 0.85);
+            color: var(--theme-accent);
         }
 
         .compact-action-bar {
@@ -1460,6 +1468,10 @@
         // 統一計算並刷新頁碼指示器
    
         let useRomanIndicator = true; 
+        function toggleRomanIndicator() {
+            useRomanIndicator = !useRomanIndicator;
+            updateCarouselIndicator();
+        }
         
         function updateCarouselIndicator() {
             const track = document.getElementById('carousel-track');
