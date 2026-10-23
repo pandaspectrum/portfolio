@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10231730</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10231742</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -862,6 +862,27 @@
                 background: rgba(0, 0, 0, 0.35);
             }
         }
+        .visit-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Courier New", monospace;
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid var(--border-color);
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+        
+        .counter-digits {
+            color: var(--theme-accent);
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px var(--theme-glow);
+            transition: color 0.4s ease;
+        }
     </style>
 </head>
 <body data-theme="led">
@@ -981,7 +1002,7 @@
             handleDeepLinking();
             //renderCategory(currentCat);
             setupCarouselAutoplay();
-            
+            initVisitorCounter();
             const track = document.getElementById('carousel-track');
             track.addEventListener('scroll', updateCarouselIndicator);
         });
@@ -1025,17 +1046,6 @@
                     }
                 });
                 console.log("CSV 載入成功，已解析商品：", database);
-                                // 每次進站向 API 請求 +1
-                fetch('https://api.counterapi.dev/v1/pandaspectrum/visits/up')
-                  .then(res => res.json())
-                  .then(data => {
-                      // 格式化為 6 位數補零，例如 000428
-                      const formatted = String(data.count).padStart(6, '0');
-                      document.getElementById('visit-count').innerText = formatted;
-                  })
-                  .catch(() => {
-                      document.getElementById('visit-count').innerText = '001024';
-                  });
             } catch (err) {
                 console.error("載入 CSV 失敗：", err);
             }
@@ -1092,6 +1102,44 @@
             track.addEventListener('touchend', () => {
                 startAutoplay();
             }, { passive: true });
+        }
+        async function initVisitorCounter() {
+            const el = document.getElementById('site-visits');
+            if (!el) return;
+        
+            const NAMESPACE = 'pandaspectrum'; // 您的專屬空間
+            const KEY = 'site_visits';
+            const SESSION_LOCK = 'has_counted_visit';
+        
+            try {
+                // 判斷是否為同一次造訪（避免 F5 灌水）
+                const alreadyCounted = sessionStorage.getItem(SESSION_LOCK);
+                
+                // 若已計數過，走唯讀查詢；若尚未計數，走累加 /up
+                const endpoint = alreadyCounted 
+                    ? `https://api.counterapi.dev/v1/${NAMESPACE}/${KEY}`
+                    : `https://api.counterapi.dev/v1/${NAMESPACE}/${KEY}/up`;
+        
+                const res = await fetch(endpoint);
+                if (!res.ok) throw new Error('Counter API 響應異常');
+                
+                const data = await res.json();
+                const count = data.count || 0;
+        
+                // 標記本次 session 已計數
+                if (!alreadyCounted) {
+                    sessionStorage.setItem(SESSION_LOCK, 'true');
+                }
+        
+                // 格式化為 6 位數補零（例如：001420）
+                el.innerText = String(count).padStart(6, '0');
+        
+            } catch (err) {
+                console.warn('計數器載入受阻（可能受廣告攔截器阻擋或網路離線）：', err);
+                // 優雅降級：若 API 失效，顯示簡短符號，不破壞排版
+                el.innerText = 'OFFLINE';
+                el.style.opacity = '0.5';
+            }
         }
         function setupNavigation() {
             const buttons = document.querySelectorAll('#top-nav .nav-btn');
@@ -1963,6 +2011,10 @@
 
             <div class="footer-meta">
                 <span>© 2016–2026 Panda'Spectrum. All Rights Reserved.</span>
+                <div class="visit-counter" title="全站造訪記錄">
+                    <span class="counter-label">VISITOR:</span>
+                    <span class="counter-digits" id="site-visits">------</span>
+                </div>
                 <div class="footer-links">
                     <a href="https://instagram.com/pandaspectrum" target="_blank" rel="noopener">Instagram</a>
                     <span>•</span>
@@ -1970,9 +2022,6 @@
                     <span>•</span>
                     <a href="mailto:alans7077@yahoo.com.tw">Contact</a>
                 </div>
-            </div>
-            <div class="visit-counter">
-                VISITOR NO. <span id="visit-count">......</span>
             </div>
         </div>
     </footer>
