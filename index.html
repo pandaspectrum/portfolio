@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10231742</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10240633</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1002,7 +1002,8 @@
             handleDeepLinking();
             //renderCategory(currentCat);
             setupCarouselAutoplay();
-            initVisitorCounter();
+            //initVisitorCounter();
+            initSiteVisitorCounter();
             const track = document.getElementById('carousel-track');
             track.addEventListener('scroll', updateCarouselIndicator);
         });
@@ -1103,43 +1104,44 @@
                 startAutoplay();
             }, { passive: true });
         }
-        async function initVisitorCounter() {
-            const el = document.getElementById('site-visits');
-            if (!el) return;
+        const GAS_ANALYTICS_URL = "https://script.google.com/macros/s/AKfycbyY1yiagI5YfO0s75bGeK5ZfMnIEN8nDD1c1RbQZr6mBShruewWgtfrCvA2EKYSecy9Ag/exec";
         
-            const NAMESPACE = 'pandaspectrum'; // 您的專屬空間
-            const KEY = 'site_visits';
-            const SESSION_LOCK = 'has_counted_visit';
+        // 1. 全站進站計數（只在 DOMContentLoaded 觸發一次）
+        async function initSiteVisitorCounter() {
+            const el = document.getElementById('site-visits');
+            const SESSION_LOCK = "counted_site_visit";
+            const alreadyCounted = sessionStorage.getItem(SESSION_LOCK);
+            const action = alreadyCounted ? "get" : "up";
         
             try {
-                // 判斷是否為同一次造訪（避免 F5 灌水）
-                const alreadyCounted = sessionStorage.getItem(SESSION_LOCK);
-                
-                // 若已計數過，走唯讀查詢；若尚未計數，走累加 /up
-                const endpoint = alreadyCounted 
-                    ? `https://api.counterapi.dev/v1/${NAMESPACE}/${KEY}`
-                    : `https://api.counterapi.dev/v1/${NAMESPACE}/${KEY}/up`;
-        
-                const res = await fetch(endpoint);
-                if (!res.ok) throw new Error('Counter API 響應異常');
-                
+                const res = await fetch(`${GAS_ANALYTICS_URL}?key=site_visits&action=${action}`);
+                if (!res.ok) throw new Error("GAS 回應異常");
                 const data = await res.json();
-                const count = data.count || 0;
-        
-                // 標記本次 session 已計數
+                
                 if (!alreadyCounted) {
-                    sessionStorage.setItem(SESSION_LOCK, 'true');
+                    sessionStorage.setItem(SESSION_LOCK, "true");
                 }
         
-                // 格式化為 6 位數補零（例如：001420）
-                el.innerText = String(count).padStart(6, '0');
-        
+                if (el) el.innerText = String(data.count || 0).padStart(6, '0');
             } catch (err) {
-                console.warn('計數器載入受阻（可能受廣告攔截器阻擋或網路離線）：', err);
-                // 優雅降級：若 API 失效，顯示簡短符號，不破壞排版
-                el.innerText = 'OFFLINE';
-                el.style.opacity = '0.5';
+                console.warn("全站計數載入受阻：", err);
+                if (el) el.innerText = "------";
             }
+        }
+        
+        // 2. 子商品點閱統計（換商品時觸發）
+        function trackItemView(itemId) {
+            if (!itemId) return;
+        
+            // 防止同一次瀏覽期間重複狂刷同個商品
+            const sessionKey = `viewed_${itemId}`;
+            if (sessionStorage.getItem(sessionKey)) return;
+        
+            sessionStorage.setItem(sessionKey, "true");
+        
+            // 背景發送請求，完全不使用 await 阻擋主執行緒
+            fetch(`${GAS_ANALYTICS_URL}?key=${encodeURIComponent(itemId)}&action=up`)
+                .catch(err => console.debug("Item tracking ignored:", err));
         }
         function setupNavigation() {
             const buttons = document.querySelectorAll('#top-nav .nav-btn');
@@ -1380,7 +1382,7 @@
         async function loadItemDetails(item, targetSlide = null) {
             currentItem = item;
             const thisLoadId = ++currentLoadId;
-        
+            trackItemView(item.id);
             // 更新單價與規格特性
             const words = currentLang === 'zh' ? '客製討論' : 'Inquire'; 
             document.getElementById('product-price').innerText = item.price > 0 ? `$${item.price}` : words;
