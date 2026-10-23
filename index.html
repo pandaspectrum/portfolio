@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10240633</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10240652</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1114,8 +1114,13 @@
             const action = alreadyCounted ? "get" : "up";
         
             try {
-                const res = await fetch(`${GAS_ANALYTICS_URL}?key=site_visits&action=${action}`);
-                if (!res.ok) throw new Error("GAS 回應異常");
+                const res = await fetch(`${GAS_ANALYTICS_URL}?key=site_visits&action=${action}`, {
+                    method: "GET",
+                    mode: "cors",
+                    redirect: "follow" // 關鍵：確保跟隨 Google 伺服器的 302 轉址
+                });
+                
+                if (!res.ok) throw new Error(`GAS 回應異常: ${res.status}`);
                 const data = await res.json();
                 
                 if (!alreadyCounted) {
@@ -1129,20 +1134,22 @@
             }
         }
         
-        // 2. 子商品點閱統計（換商品時觸發）
+        // 2. 子商品點閱統計
         function trackItemView(itemId) {
             if (!itemId) return;
         
-            // 防止同一次瀏覽期間重複狂刷同個商品
             const sessionKey = `viewed_${itemId}`;
             if (sessionStorage.getItem(sessionKey)) return;
         
             sessionStorage.setItem(sessionKey, "true");
         
-            // 背景發送請求，完全不使用 await 阻擋主執行緒
-            fetch(`${GAS_ANALYTICS_URL}?key=${encodeURIComponent(itemId)}&action=up`)
-                .catch(err => console.debug("Item tracking ignored:", err));
+            fetch(`${GAS_ANALYTICS_URL}?key=${encodeURIComponent(itemId)}&action=up`, {
+                method: "GET",
+                mode: "cors",
+                redirect: "follow"
+            }).catch(err => console.debug("Item tracking ignored:", err));
         }
+        
         function setupNavigation() {
             const buttons = document.querySelectorAll('#top-nav .nav-btn');
             buttons.forEach(btn => {
@@ -2013,10 +2020,6 @@
 
             <div class="footer-meta">
                 <span>© 2016–2026 Panda'Spectrum. All Rights Reserved.</span>
-                <div class="visit-counter" title="全站造訪記錄">
-                    <span class="counter-label">VISITOR:</span>
-                    <span class="counter-digits" id="site-visits">------</span>
-                </div>
                 <div class="footer-links">
                     <a href="https://instagram.com/pandaspectrum" target="_blank" rel="noopener">Instagram</a>
                     <span>•</span>
@@ -2024,6 +2027,10 @@
                     <span>•</span>
                     <a href="mailto:alans7077@yahoo.com.tw">Contact</a>
                 </div>
+            </div>
+            <div class="visit-counter" title="全站造訪記錄">
+                    <span class="counter-label">VISITOR:</span>
+                    <span class="counter-digits" id="site-visits">------</span>
             </div>
         </div>
     </footer>
