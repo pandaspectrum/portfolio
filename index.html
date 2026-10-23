@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10220306</title>
+    <title>勁梅演光 Panda'Spectrum - 專業Flow Art 道具工作室　v.10231730</title>
     <!-- 本地引入 papaparse -->
     <script src="papaparse.min.js"></script>
     <style>
@@ -1025,6 +1025,17 @@
                     }
                 });
                 console.log("CSV 載入成功，已解析商品：", database);
+                                // 每次進站向 API 請求 +1
+                fetch('https://api.counterapi.dev/v1/pandaspectrum/visits/up')
+                  .then(res => res.json())
+                  .then(data => {
+                      // 格式化為 6 位數補零，例如 000428
+                      const formatted = String(data.count).padStart(6, '0');
+                      document.getElementById('visit-count').innerText = formatted;
+                  })
+                  .catch(() => {
+                      document.getElementById('visit-count').innerText = '001024';
+                  });
             } catch (err) {
                 console.error("載入 CSV 失敗：", err);
             }
@@ -1959,6 +1970,9 @@
                     <span>•</span>
                     <a href="mailto:alans7077@yahoo.com.tw">Contact</a>
                 </div>
+            </div>
+            <div class="visit-counter">
+                VISITOR NO. <span id="visit-count">......</span>
             </div>
         </div>
     </footer>
